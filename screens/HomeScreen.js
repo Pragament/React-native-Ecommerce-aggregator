@@ -21,7 +21,7 @@ const HomeScreen = () => {
   const navigation = useNavigation();
   const categoriesFetch = async () => {
     try {
-      const response = await fetch('http://192.168.0.109:8000/categories', {
+      const response = await fetch('https://raw.githubusercontent.com/Pragament/React-native-Ecommerce-aggregator/dev/temporary_api/categories.json', {
         method: 'GET'
       })
 
@@ -39,7 +39,7 @@ const HomeScreen = () => {
 
   const subCategoriesFetch = async () => {
     try {
-      const response = await fetch('http://192.168.0.109:8000/subcategories', {
+      const response = await fetch('https://raw.githubusercontent.com/Pragament/React-native-Ecommerce-aggregator/dev/temporary_api/subcategories.json', {
         method: 'GET'
       })
       if (!response.ok) {
