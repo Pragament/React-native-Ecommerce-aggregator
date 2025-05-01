@@ -1,42 +1,28 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Image, ScrollView } from 'react-native';
+import React from 'react';
+import { View, Text, Image } from 'react-native';
+import styles from './ProductScreen.styles';
 
-const ProductScreen = () => {
-    const [products, setProducts] = useState([]);
+const ProductScreen = ({ product }) => {
+  const { product_name, price, description, image_url, measurement } = product;
 
-    const fetchProducts = async () => {
-        try {
-            const response = await fetch('https://raw.githubusercontent.com/Pragament/React-native-Ecommerce-aggregator/dev/temporary_api/products.json');
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            const productsData = await response.json();
-            console.log('This is the products data:', productsData);
-            setProducts(productsData);
-        } catch (error) {
-            console.error('Error fetching the products:', error);
-        }
-    };
+  const measurementValue = measurement ? measurement.value : 'N/A';
+  const measurementUnit = measurement ? measurement.unit : '';
 
-    useEffect(() => {
-        fetchProducts();
-    }, []);
+  const finalUrl = encodeURI(image_url);
 
-    return (
-        <ScrollView className = " mt-3">
-            {products.map((item)=>(
-                <View key={item._id} className="flex-row bg-white rounded-lg shadow-md p-4 m-2">
-                    <Image source={{ uri: item.imageURL }} className="w-24 h-24 mr-4 rounded"/>
-                    <View className="flex-1">
-                        <Text className="font-bold text-lg mb-1">{item.brand}</Text>
-                        <Text className="text-md mb-1">{item.name}</Text>
-                        <Text className="text-md mb-1">Price: ₹{item.price}</Text>
-                        <Text className="text-md">Quantity: {item.quantity}</Text>
-                    </View>
-                </View>
-            ))}
-        </ScrollView>
-    );
+  return (
+    <View style={styles.card}>
+      <Image
+        source={{ uri: finalUrl }}
+        style={styles.image}
+        onError={() => console.warn('Image failed to load:', finalUrl)}
+      />
+      <Text style={styles.productName} numberOfLines={2}>{product_name}</Text>
+      <Text style={styles.productPrice}>₹{price}</Text>
+      <Text style={styles.productDescription} numberOfLines={2}>{description}</Text>
+      <Text style={styles.productMeasurement}>{measurementValue} {measurementUnit}</Text>
+    </View>
+  );
 };
 
 export default ProductScreen;
