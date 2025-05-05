@@ -1,105 +1,127 @@
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
+  FlatList,
   TouchableOpacity,
-  SafeAreaView,
-  Image,
-  ScrollView
-} from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
-import React, { useEffect, useState } from 'react'
-import { useNavigation } from '@react-navigation/native';
-
-
+  ActivityIndicator,
+} from 'react-native';
+import ProductCard from './ProductScreen';
+import styles from './HomeScreen.styles';
 
 const HomeScreen = () => {
-  const [categories, setCategories] = useState([])
-  const [subCategories, setSubCategories] = useState([])
-  const [searchQuery, setSearchQuery] = useState('')
-
-  const navigation = useNavigation();
-  const categoriesFetch = async () => {
-    try {
-      const response = await fetch('https://raw.githubusercontent.com/Pragament/React-native-Ecommerce-aggregator/dev/temporary_api/categories.json', {
-        method: 'GET'
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`)
-      }
-
-      const categories = await response.json()
-      console.log('This is the categories data:', categories)
-      setCategories(categories)
-    } catch (error) {
-      console.error('Error fetching categories:', error.message)
-    }
-  }
-
-  const subCategoriesFetch = async () => {
-    try {
-      const response = await fetch('https://raw.githubusercontent.com/Pragament/React-native-Ecommerce-aggregator/dev/temporary_api/subcategories.json', {
-        method: 'GET'
-      })
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`)
-      }
-      const subCategories = await response.json()
-      console.log('These are the subCategories:', subCategories)
-      setSubCategories(subCategories)
-    } catch (error) {
-      console.log('Error fetching subCategories:', error)
-    }
-  }
-
+  const [categories, setCategories] = useState([]);
+  const [selectedCategoryIndex, setSelectedCategoryIndex] = useState(0);
+  const [selectedSubcategoryIndex, setSelectedSubcategoryIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    categoriesFetch()
-    subCategoriesFetch()
-  }, [])
+    fetchData();
+  }, []);
 
-  const filteredData = [...categories,...subCategories].filter((item) => {
-    return item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  })
+  const fetchData = async () => {
+    try {
+      const response = await fetch(
+        'https://staticapis.pragament.com/products/categorized_products.json'
+      );
+      const json = await response.json();
+      setCategories(json.categories);
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  const selectedCategory = categories[selectedCategoryIndex];
+  const selectedSubcategory =
+    selectedCategory?.subcategories[selectedSubcategoryIndex];
+  const products = selectedSubcategory?.products || [];
 
   return (
-    <SafeAreaView className=" ">
-      <View className=" flex flex-row items-center p-3 rounded-full border ml-5 mr-5 mt-10">
-        <TouchableOpacity
-          onPress={() => {}}
-          className=" border rounded-full bg-black"
-        >
-          <Ionicons name="arrow-back-outline" color={'white'} size={20} />
-        </TouchableOpacity>
-        <TouchableOpacity className=" flex flex-row w-[90%] ml-2 ">
-          <Ionicons name="search" size={30} />
-          <TextInput
-            className=" text-base"
-            placeholder="Search For Your Product"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </TouchableOpacity>
+    <View style={styles.container}>
+      {/* Categories bar */}
+      <View style={styles.categoryBarContainer}>
+        <FlatList
+          horizontal
+          data={categories}
+          keyExtractor={(item, index) => item.category_id + '-' + index}
+          renderItem={({ item, index }) => (
+            <TouchableOpacity
+              onPress={() => {
+                setSelectedCategoryIndex(index);
+                setSelectedSubcategoryIndex(0);
+              }}
+              style={[
+                styles.categoryBox,
+                selectedCategoryIndex === index && styles.selectedCategoryBox,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.categoryText,
+                  selectedCategoryIndex === index && styles.selectedCategoryText,
+                ]}
+              >
+                {item.category}
+              </Text>
+            </TouchableOpacity>
+          )}
+          showsHorizontalScrollIndicator={false}
+        />
       </View>
-      {searchQuery !== '' && (
-        <ScrollView>
-          {filteredData.map((item) => (
-              <TouchableOpacity onPress={()=>{
-                navigation.navigate("Products")
-              }} key={item._id} className=" flex flex-row items-center p-3">
-                <Image
-                  source={{ uri: item.imageURL }}
-                  style={{ width: 50, height: 50 }}
-                  className=" rounded-full"
-                />
-                <Text className =" text-lg font-semibold ml-3">{item.name}</Text>
-              </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
-    </SafeAreaView>
-  )
-}
 
-export default HomeScreen
+      <View style={styles.content}>
+        {/* Subcategories list on the left */}
+        <View style={styles.subcategories}>
+          <FlatList
+            data={selectedCategory.subcategories}
+            keyExtractor={(item, index) => item.subcategory_id + '-' + index}
+            renderItem={({ item, index }) => (
+              <TouchableOpacity onPress={() => setSelectedSubcategoryIndex(index)}>
+                <Text
+                  style={[
+                    styles.subcategoryText,
+                    selectedSubcategoryIndex === index &&
+                      styles.selectedSubcategoryText,
+                  ]}
+                >
+                  {item.subcategory}
+                </Text>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+
+        {/* Products in 2 columns */}
+        <View style={styles.products}>
+          <FlatList
+            data={products}
+            numColumns={2}
+            keyExtractor={(item, index) => item.product_id + '-' + index}
+            columnWrapperStyle={{ justifyContent: 'space-between' }}
+            renderItem={({ item }) => (
+              <ProductCard
+                product={{
+                  ...item,
+                  image_url: `https://staticapis.pragament.com/${item.image_url}`,
+                }}
+              />
+            )}
+            showsVerticalScrollIndicator={false}
+          />
+        </View>
+      </View>
+    </View>
+  );
+};
+
+export default HomeScreen;
