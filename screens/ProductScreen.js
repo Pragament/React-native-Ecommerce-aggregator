@@ -52,7 +52,6 @@ const ProductScreen = ({ product, nutrition }) => {
         {measurementValue} {measurementUnit}
       </Text>
 
-      {/* Single View Nutrition Details button styled like a button */}
       <TouchableOpacity style={styles.viewNutritionButtonContainer} onPress={() => setModalVisible(true)}>
         <Text style={styles.viewNutritionButton}>View Nutrition Details</Text>
       </TouchableOpacity>
@@ -70,7 +69,6 @@ const ProductScreen = ({ product, nutrition }) => {
         <View style={styles.modalContainer}>
           <Text style={styles.modalTitle}>{product_name}</Text>
 
-          {/* Handle cases with valid units and dropdown */}
           {filteredUnits.length === 0 ? (
             <Text style={{ textAlign: 'center', color: '#999', marginTop: 20 }}>
               No supported units or nutrition information available.
@@ -88,7 +86,6 @@ const ProductScreen = ({ product, nutrition }) => {
                 </View>
               </TouchableOpacity>
 
-              {/* Show dropdown list if available units */}
               {dropdownVisible && filteredUnits.length > 0 && (
                 <View style={styles.dropdownList}>
                   {filteredUnits.map(unit => (
