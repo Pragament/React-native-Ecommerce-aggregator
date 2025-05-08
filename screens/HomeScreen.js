@@ -6,11 +6,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import ProductCard from './ProductScreen';
+import ProductCard from './ProductScreen'; 
 import styles from './HomeScreen.styles';
 
 const HomeScreen = () => {
   const [categories, setCategories] = useState([]);
+  const [nutritionData, setNutritionData] = useState([]);
   const [selectedCategoryIndex, setSelectedCategoryIndex] = useState(0);
   const [selectedSubcategoryIndex, setSelectedSubcategoryIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -21,13 +22,15 @@ const HomeScreen = () => {
 
   const fetchData = async () => {
     try {
-      const response = await fetch(
-        'https://staticapis.pragament.com/products/categorized_products.json'
-      );
-      const json = await response.json();
-      setCategories(json.categories);
+      const productResponse = await fetch('https://staticapis.pragament.com/products/categorized_products.json');
+      const productJson = await productResponse.json();
+      setCategories(productJson.categories);
+
+      const nutritionResponse = await fetch('https://staticapis.pragament.com/products/vegetables_fruits.json');
+      const nutritionJson = await nutritionResponse.json();
+      setNutritionData(nutritionJson.vegetables);
     } catch (error) {
-      console.error('Failed to fetch products:', error);
+      console.error('Failed to fetch products or nutrition data:', error);
     } finally {
       setLoading(false);
     }
@@ -42,9 +45,13 @@ const HomeScreen = () => {
   }
 
   const selectedCategory = categories[selectedCategoryIndex];
-  const selectedSubcategory =
-    selectedCategory?.subcategories[selectedSubcategoryIndex];
+  const selectedSubcategory = selectedCategory?.subcategories[selectedSubcategoryIndex];
   const products = selectedSubcategory?.products || [];
+
+  const getNutritionForProduct = (productImageUrl) => {
+    const relativeImagePath = productImageUrl.replace('https://staticapis.pragament.com/', '');
+    return nutritionData.find(n => n.imagepath === relativeImagePath);
+  };
 
   return (
     <View style={styles.container}>
@@ -90,8 +97,7 @@ const HomeScreen = () => {
                 <Text
                   style={[
                     styles.subcategoryText,
-                    selectedSubcategoryIndex === index &&
-                      styles.selectedSubcategoryText,
+                    selectedSubcategoryIndex === index && styles.selectedSubcategoryText,
                   ]}
                 >
                   {item.subcategory}
@@ -108,14 +114,17 @@ const HomeScreen = () => {
             numColumns={2}
             keyExtractor={(item, index) => item.product_id + '-' + index}
             columnWrapperStyle={{ justifyContent: 'space-between' }}
-            renderItem={({ item }) => (
-              <ProductCard
-                product={{
-                  ...item,
-                  image_url: `https://staticapis.pragament.com/${item.image_url}`,
-                }}
-              />
-            )}
+            renderItem={({ item }) => {
+              const fullImageUrl = `https://staticapis.pragament.com/${item.image_url}`;
+              const nutritionInfo = getNutritionForProduct(fullImageUrl);
+
+              return (
+                <ProductCard
+                  product={{ ...item, image_url: fullImageUrl }}
+                  nutrition={nutritionInfo}
+                />
+              );
+            }}
             showsVerticalScrollIndicator={false}
           />
         </View>
